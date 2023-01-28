@@ -28,20 +28,26 @@ User user = userRepository3.findById(userId).get();
 ParkingLot parkingLot = parkingLotRepository3.findById(parkingLotId).get();
 List<Spot> spotList = new ArrayList<>();
 int c=Integer.MAX_VALUE;
-int wheels=0;
+spotList=parkingLot.getSpotList();
         Reservation reservation = new Reservation();
 Spot spot =null;
 for(Spot s: spotList){
-    if(!s.getOccupied() && c>s.getPricePerHour() ){
+    if(!s.getOccupied() && c>s.getPricePerHour()  ){
         if(numberOfWheels==2)
         spot=s;
         else if(numberOfWheels==4 && s.getSpotType().equals("FOUR_WHEELER") ||  s.getSpotType().equals("OTHERS"))
             spot=s;
-        else
+        else if(numberOfWheels>4)
             spot =s;
     }
 }
-
+spot.setOccupied(true);
+        if(numberOfWheels==2)
+            spot.setSpotType(SpotType.TWO_WHEELER);
+        else if(numberOfWheels==4 )
+            spot.setSpotType(SpotType.FOUR_WHEELER);
+        else if(numberOfWheels>4)
+            spot.setSpotType(SpotType.OTHERS);
 reservation.setSpot(spot);
 reservation.setUser(user);
 reservation.setNumberOfHours(timeInHours);

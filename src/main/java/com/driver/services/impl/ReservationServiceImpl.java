@@ -9,7 +9,7 @@ import com.driver.services.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 @Service
@@ -22,99 +22,66 @@ public class ReservationServiceImpl implements ReservationService {
     ReservationRepository reservationRepository3;
     @Autowired
     ParkingLotRepository parkingLotRepository3;
+
+
     @Override
     public Reservation reserveSpot(Integer userId, Integer parkingLotId, Integer timeInHours, Integer numberOfWheels) throws Exception {
+
+        //Reserve a spot in the given parkingLot such that the total price is minimum. Note that the price per hour for each spot is different
+        //Note that the vehicle can only be parked in a spot having a type equal to or larger than given vehicle
+        //If parkingLot is not found, user is not found, or no spot is available, throw "Cannot make reservation" exception.
         try{
-            ParkingLot parkingLot = parkingLotRepository3.findById(parkingLotId).get();
-
-            User user = userRepository3.findById(userId).get();
-
-            if(parkingLot==null || user==null){
+            if(parkingLotRepository3.findById(parkingLotId).isPresent() || userRepository3.findById(userId).isPresent()){
                 throw new Exception("Cannot make reservation");
+
             }
+            ParkingLot parkingLot=parkingLotRepository3.findById(parkingLotId).get();
+            User user=userRepository3.findById(userId).get();
 
-            List<Spot> spotList = parkingLot.getSpotList();
+//       Fetching Spots-List from ParkingLots
+            List<Spot> spots=parkingLot.getSpotList();
+            double minprice=Double.MAX_VALUE;
+            Spot spotReserve=null;
 
-            Integer minBill = Integer.MAX_VALUE;
-
-            Spot reqspot=null;
-            for(Spot spot:spotList){
-                if(spotTypeFunction(spot.getSpotType())>=numberOfWheels && spot.getOccupied()==false && spot.getPricePerHour()*timeInHours<minBill){
-                    minBill=spot.getPricePerHour()*timeInHours;
-                    reqspot=spot;
+            for(Spot spot:spots){
+                if(!spot.getOccupied() && numberOfWheels==2 && spot.getSpotType()==SpotType.TWO_WHEELER && spot.getPricePerHour()<minprice){
+                    minprice=spot.getPricePerHour();
+                    spotReserve=spot;
+                    spot.setOccupied(true);
+                    break;
+                } else if (!spot.getOccupied() && numberOfWheels<=4 && spot.getSpotType()==SpotType.FOUR_WHEELER && spot.getPricePerHour()<minprice) {
+                    spotReserve=spot;
+                    minprice= spot.getPricePerHour();
+                    spot.setOccupied(true);
+                    break;
+                } else if (!spot.getOccupied() && numberOfWheels!=2 && numberOfWheels!=4 && spot.getSpotType()==SpotType.OTHERS && spot.getPricePerHour()<minprice) {
+                    spotReserve=spot;
+                    minprice=spot.getPricePerHour();
+                    spot.setOccupied(true);
+                    break;
                 }
             }
-            if (reqspot==null){
+
+            if(spotReserve==null){
                 throw new Exception("Cannot make reservation");
             }
 
-            Reservation reservation = new Reservation(timeInHours);
+            Reservation reservation=new Reservation();
+            reservation.setNumberOfHours(timeInHours);
             reservation.setUser(user);
-            List<Reservation> reservationList = user.getReservationList();
-            if(reservationList==null){
-                reservationList = new ArrayList<>();
-            }
-            reservationList.add(reservation);
-            user.setReservationList(reservationList);
+            reservation.setSpot(spotReserve);
 
+            user.getReservationList().add(reservation);
+            spotReserve.getReservationList().add(reservation);
 
-            reservation.setSpot(reqspot);
-            List<Reservation> reservationList1 = reqspot.getReservationList();
-            if(reservationList1==null){
-                reservationList1 = new ArrayList<>();
-            }
-            reservationList1.add(reservation);
-            reqspot.setReservationList(reservationList1);
-            reqspot.setOccupied(true);
-
+            spotRepository3.save(spotReserve);
             userRepository3.save(user);
-            spotRepository3.save(reqspot);
-
+//        reservationRepository3.save(reservation);
             return reservation;
+
 
         }catch (Exception e){
             return null;
         }
-
-        //User user = userRepository3.findById(userId).get();
-//ParkingLot parkingLot = parkingLotRepository3.findById(parkingLotId).get();
-//List<Spot> spotList = new ArrayList<>();
-//int c=Integer.MAX_VALUE;
-//spotList=parkingLot.getSpotList();
-//        Reservation reservation = new Reservation();
-//Spot spot =null;
-//for(Spot s: spotList){
-//    if(!s.getOccupied() && c>s.getPricePerHour()  ){
-//        if(numberOfWheels==2)
-//        spot=s;
-//        else if(numberOfWheels==4 && s.getSpotType().equals("FOUR_WHEELER") ||  s.getSpotType().equals("OTHERS"))
-//            spot=s;
-//        else if(numberOfWheels>4)
-//            spot =s;
-//    }
-//}
-//spot.setOccupied(true);
-//        if(numberOfWheels==2)
-//            spot.setSpotType(SpotType.TWO_WHEELER);
-//        else if(numberOfWheels==4 )
-//            spot.setSpotType(SpotType.FOUR_WHEELER);
-//        else if(numberOfWheels>4)
-//            spot.setSpotType(SpotType.OTHERS);
-//reservation.setSpot(spot);
-//reservation.setUser(user);
-//reservation.setNumberOfHours(timeInHours);
-//if(spot==null)
-//    throw new Exception("Cannot make reservation");
-//reservationRepository3.save(reservation);
-//return reservation;
-    }
-    public int spotTypeFunction(SpotType spotType){
-        if (spotType==SpotType.TWO_WHEELER){
-            return 2;
-        }
-        else if (spotType==SpotType.FOUR_WHEELER) {
-            return 4;
-        }
-        else return Integer.MAX_VALUE;
     }
 }

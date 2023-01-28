@@ -39,10 +39,16 @@ private Reservation reservation;
     public Boolean getPaymentCompleted() {
         return paymentCompleted;
     }
-
+    public Boolean isPaymentCompleted() {
+        return paymentCompleted;
+    }
     public void setPaymentCompleted(Boolean paymentCompleted) {
         this.paymentCompleted = paymentCompleted;
     }
+    public void isPaymentCompleted(Boolean paymentCompleted) {
+        this.paymentCompleted = paymentCompleted;
+    }
+
 
     public PaymentMode getPaymentMode() {
         return paymentMode;

@@ -18,6 +18,12 @@ public class Reservation {
     @OneToOne(mappedBy = "reservation",cascade = CascadeType.ALL)
     private Payment payment;
 
+    public Reservation(int numberOfHours, User user, Spot spot) {
+        this.numberOfHours = numberOfHours;
+        this.user = user;
+        this.spot = spot;
+    }
+
     public Reservation(Integer timeInHours) {
     }
 

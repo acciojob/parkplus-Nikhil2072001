@@ -12,7 +12,7 @@ public class Spot {
     @Enumerated(value = EnumType.STRING)
     private SpotType spotType;
     private int pricePerHour;
-    private Boolean occupied;
+    private boolean occupied;
     @ManyToOne
     @JoinColumn
     private ParkingLot parkingLot;
